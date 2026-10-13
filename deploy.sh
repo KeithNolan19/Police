@@ -11,6 +11,7 @@ if [ ! -f /etc/nginx/sites-available/polopace ]; then
 cat > /etc/nginx/sites-available/polopace <<CONF
 server {
     listen 80;
+    listen [::]:80;
     server_name $DOMAIN;
     root $DIR;
     index index.html;
