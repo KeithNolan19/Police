@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081a1e">
+<title>PoloPace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: app shell with three tabs (Session / Drills / Run). Run mode is a full-screen pool-deck scoreboard readable from 20 m. */
+:root{
+  --bg:#edf3f2; --surface:#ffffff; --ink:#0f2a30; --muted:#587074; --line:#d3e0df;
+  --buoy:#f2bf1f; --buoy-ink:#2a2000; --rope:#c8413a; --lane:#1f7f95; --lane-soft:#dcecef;
+  --board:#081a1e; --board-ink:#f4f7f6; --work:#f6c623; --rest:#4fc7de; --change:#ff8a5c;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1a1d; --surface:#12262a; --ink:#e6efee; --muted:#93abae; --line:#21393e;
+  --lane:#5cc0d6; --lane-soft:#173238; --rope:#ef6a62; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1a1d; --surface:#12262a; --ink:#e6efee; --muted:#93abae; --line:#21393e;
+  --lane:#5cc0d6; --lane-soft:#173238; --rope:#ef6a62; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--lane);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+
+/* header */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:18px 10px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.5px;margin:0;line-height:1}
+.brand h1 span{color:var(--rope)}
+.brand small{color:var(--muted);font-size:13px}
+nav.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+nav.tabs button{border:0;background:none;padding:7px 16px;border-radius:999px;font-weight:600;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+/* lane-rope divider: a nod to the pool */
+.rope{height:6px;margin-block:4px 18px;background:repeating-linear-gradient(90deg,var(--rope) 0 14px,var(--surface) 14px 18px,var(--lane) 18px 32px,var(--surface) 32px 36px);border-radius:3px;opacity:.85}
+
+h2{font-family:var(--display);font-weight:800;font-size:26px;margin:0;letter-spacing:.3px;text-wrap:balance}
+.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--buoy);color:var(--buoy-ink);border-color:var(--buoy)}
+.btn.ghost{background:none}
+.icon{border:1px solid var(--line);background:var(--surface);border-radius:6px;width:30px;height:30px;display:inline-grid;place-items:center;font-size:14px;line-height:1;color:var(--muted)}
+.icon:hover{color:var(--ink);border-color:var(--muted)}
+
+/* category chips */
+.cat{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:4px;background:var(--lane-soft);color:var(--lane);white-space:nowrap}
+.cat[data-c="Sprints"],.cat[data-c="Lactic"]{background:color-mix(in srgb,var(--rope) 14%,transparent);color:var(--rope)}
+.cat[data-c="Shooting"],.cat[data-c="Tactics"]{background:color-mix(in srgb,var(--buoy) 28%,transparent);color:var(--ink)}
+
+/* session summary strip */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-block:14px}
+.summary div{background:var(--surface);padding:12px 14px}
+.summary b{display:block;font-family:var(--display);font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.summary span{font-size:12px;color:var(--muted)}
+
+/* timeline bar showing load across session */
+.tl{display:flex;height:14px;border-radius:4px;overflow:hidden;gap:2px;margin-block:4px 18px}
+.tl i{display:block;min-width:3px}
+
+/* block list */
+ol.blocks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ol.blocks li{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:start}
+.num{font-family:var(--display);font-weight:800;font-size:24px;color:var(--muted);line-height:1;font-variant-numeric:tabular-nums}
+.bname{font-weight:700;font-size:16px}
+.bmeta{color:var(--muted);font-size:13px;margin-top:2px}
+.fields{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.fields label{display:grid;gap:2px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fields input{width:84px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font-variant-numeric:tabular-nums}
+.bctl{display:flex;flex-direction:column;gap:4px}
+.min0{min-width:0}
+
+/* drill library */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-block:12px 16px}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.drill{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
+.drill h3{margin:0;font-size:16px}
+.drill p{margin:0;color:var(--muted);font-size:13.5px}
+.drill .spec{font-size:13px;font-variant-numeric:tabular-nums;font-weight:600}
+.drill .cue{font-size:13px;border-left:3px solid var(--buoy);padding-left:8px;font-style:italic}
+.drill footer{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+
+select.preset{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.note{font-size:13px;color:var(--muted);max-width:62ch}
+
+/* ===== Run mode: always dark, scoreboard ===== */
+#run{position:fixed;inset:0;background:var(--board);color:var(--board-ink);z-index:40;display:flex;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(12px + env(safe-area-inset-bottom,0px));color-scheme:dark}
+#run .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#run .bar .btn{background:#13303a;border-color:#244752;color:var(--board-ink)}
+#run .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;min-height:0;cursor:pointer;user-select:none}
+.phase{font-family:var(--display);font-weight:900;font-size:clamp(28px,7vw,64px);letter-spacing:.08em;text-transform:uppercase;line-height:1;color:var(--pc)}
+.clock{font-family:var(--display);font-weight:900;font-size:clamp(110px,30vw,340px);line-height:.85;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--pc)}
+.dname{font-size:clamp(20px,4vw,36px);font-weight:700;max-width:24ch;text-wrap:balance}
+.rep{font-family:var(--display);font-weight:800;font-size:clamp(20px,3.5vw,32px);color:#9fb7bb;letter-spacing:.06em}
+.cueline{font-size:clamp(15px,2.4vw,20px);color:#c6d6d8;max-width:40ch;min-height:1.4em}
+.prog{height:8px;background:#163039;border-radius:4px;overflow:hidden;margin-block:10px}
+.prog i{display:block;height:100%;background:var(--pc);transition:width .2s linear}
+.foot{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
+.next{font-size:15px;color:#9fb7bb;min-width:0}
+.next b{color:var(--board-ink);display:block;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctl{display:flex;gap:8px}
+.ctl button{width:60px;height:60px;border-radius:50%;border:2px solid #2a4c57;background:#102a31;color:var(--board-ink);font-size:20px;font-weight:700;display:grid;place-items:center}
+.ctl button.go{width:76px;height:76px;background:var(--pc);color:#0a1a1d;border-color:var(--pc);font-size:26px}
+.elapsed{font-variant-numeric:tabular-nums;color:#9fb7bb;font-size:14px}
+.tog{display:flex;align-items:center;gap:6px;font-size:13px;color:#c6d6d8}
+@media (max-width:520px){.ctl button{width:50px;height:50px}.ctl button.go{width:64px;height:64px}}
+@media (prefers-reduced-motion:reduce){.prog i{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand"><h1>Polo<span>Pace</span></h1><small>Run the session. Watch the players.</small></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-session" aria-selected="true" data-tab="session">Session</button>
+      <button role="tab" id="tab-drills" aria-selected="false" data-tab="drills">Drills</button>
+    </nav>
+  </header>
+  <div class="rope" aria-hidden="true"></div>
+
+  <section id="v-session">
+    <div class="row spread">
+      <div class="min0">
+        <div class="eyebrow">Tonight's plan</div>
+        <h2 id="sname">Club night</h2>
+      </div>
+      <div class="row">
+        <select class="preset" id="preset" aria-label="Load a preset session"></select>
+        <button class="btn primary" id="startBtn">▶ Start session</button>
+      </div>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="tl" id="tl" aria-hidden="true"></div>
+    <ol class="blocks" id="blocks"></ol>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" data-tab="drills">+ Add drill from library</button>
+      <button class="btn ghost" id="clearBtn">Clear session</button>
+    </div>
+    <p class="note" style="margin-top:22px">During a session the app calls each drill out loud, beeps the last three seconds, blows a whistle tone on every change, and announces what's next during rests. Tap anywhere on the run screen to pause. Keep the phone or tablet plugged into a speaker on the pool deck.</p>
+  </section>
+
+  <section id="v-drills" hidden>
+    <div class="eyebrow">Library</div>
+    <h2>Drills</h2>
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<div id="run" hidden>
+  <div class="bar">
+    <button class="btn" id="exitBtn">✕ End</button>
+    <span class="elapsed" id="elapsed"></span>
+    <label class="tog"><input type="checkbox" id="voiceT" checked> Voice</label>
+  </div>
+  <div class="stage" id="stage" aria-live="polite">
+    <div class="phase" id="phase">Ready</div>
+    <div class="clock" id="clock">0:10</div>
+    <div class="dname" id="dname"></div>
+    <div class="rep" id="rep"></div>
+    <div class="cueline" id="cueline"></div>
+  </div>
+  <div class="prog"><i id="prog" style="width:0"></i></div>
+  <div class="foot">
+    <div class="next" id="next"></div>
+    <div class="ctl">
+      <button id="prevBtn" aria-label="Previous interval">⏮</button>
+      <button class="go" id="playBtn" aria-label="Pause">❚❚</button>
+      <button id="skipBtn" aria-label="Skip interval">⏭</button>
+      <button id="addBtn" aria-label="Add 30 seconds">+30</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS=["Warm-up","Sprints","Lactic","Passing","Shooting","Tactics","Cool-down"];
+const CAT_COL={"Warm-up":"var(--lane)","Sprints":"var(--rope)","Lactic":"var(--rope)","Passing":"var(--lane)","Shooting":"var(--buoy)","Tactics":"var(--buoy)","Cool-down":"var(--muted)"};
+// work/rest in seconds. change = set-up time before the drill starts.
+const DRILLS=[
+ {id:"easy",cat:"Warm-up",name:"Easy paddle laps",reps:1,work:300,rest:0,change:20,desc:"Continuous laps of the pitch at conversational pace, both directions.",cue:"Easy laps. Long strokes, relaxed shoulders, change direction each length."},
+ {id:"mob",cat:"Warm-up",name:"On-water mobility",reps:1,work:180,rest:0,change:20,desc:"Trunk rotations, edging, draw strokes and low braces in the boat.",cue:"Rotate from the hips. Edge left, edge right, then draw strokes."},
+ {id:"hand",cat:"Warm-up",name:"Ball-handling circle",reps:1,work:240,rest:0,change:30,desc:"Whole group in a circle, quick one-hand flicks across and around.",cue:"Call the name before you pass. One hand, quick release."},
+ {id:"s25",cat:"Sprints",name:"25 m sprints",reps:8,work:12,rest:48,change:30,desc:"Standing start, full-pitch length. Paddle back easy on the rest.",cue:"Sprint the length. First three strokes short and fast."},
+ {id:"turn",cat:"Sprints",name:"Pivot and go",reps:6,work:15,rest:45,change:30,desc:"Sprint 10 m, sweep turn 180°, sprint back. Alternate turn side each rep.",cue:"Hard sweep on the turn, lean in, accelerate out."},
+ {id:"drop",cat:"Sprints",name:"Ball-drop start",reps:6,work:10,rest:50,change:30,desc:"Pairs on the goal lines, ball dropped at half-way like a match start.",cue:"Ball drop! Win the sprint and secure possession."},
+ {id:"pyr",cat:"Lactic",name:"2-minute efforts",reps:4,work:120,rest:120,change:30,desc:"Hard continuous laps for two minutes, equal rest. Hold pace across all four.",cue:"Two minutes hard. Hold the same pace every rep."},
+ {id:"tab",cat:"Lactic",name:"Tabata on water",reps:8,work:20,rest:10,change:30,desc:"20 s all-out sprint, 10 s float. Eight rounds, four minutes total.",cue:"All out for twenty. Float on the ten."},
+ {id:"min",cat:"Lactic",name:"1-on 1-off",reps:6,work:60,rest:60,change:30,desc:"One minute race pace, one minute easy paddle.",cue:"Race pace for one minute. Keep your stroke long when it hurts."},
+ {id:"pp",cat:"Passing",name:"Static pairs passing",reps:3,work:90,rest:30,change:30,desc:"Pairs 8 m apart. Flat passes, then lobs, then off-hand.",cue:"Flat passes at chest height. Watch it into the hand."},
+ {id:"tri",cat:"Passing",name:"Moving triangles",reps:4,work:120,rest:30,change:30,desc:"Groups of three, keep moving, pass to space not to the boat.",cue:"Pass into space. Move after every pass."},
+ {id:"long",cat:"Passing",name:"Long switch passes",reps:3,work:90,rest:30,change:30,desc:"Cross-pitch passes over 15 m+ to switch play.",cue:"Hips into the throw. Aim ahead of the receiver."},
+ {id:"s6",cat:"Shooting",name:"Shooting from 6 m",reps:4,work:60,rest:30,change:40,desc:"Line up, shoot at the 2 m-high goal, collect, rejoin queue. Keeper rotates.",cue:"Pick a corner. Elbow high, follow through."},
+ {id:"pres",cat:"Shooting",name:"Shot under pressure",reps:6,work:30,rest:30,change:40,desc:"Attacker vs defender plus keeper. Thirty seconds to get a shot away.",cue:"Shield the ball, create the angle, shoot early."},
+ {id:"pen",cat:"Shooting",name:"Penalty shots",reps:1,work:180,rest:0,change:30,desc:"Everyone takes penalties against a rotating keeper.",cue:"Same routine every time. Breathe, pick your spot."},
+ {id:"zone",cat:"Tactics",name:"Zone defence shape",reps:3,work:180,rest:60,change:45,desc:"Five attack, five defend. Defence sets the zone with the keeper under goal.",cue:"Get back fast. Keeper under the goal, wings tight."},
+ {id:"fb",cat:"Tactics",name:"Fast break 3 v 2",reps:6,work:40,rest:40,change:45,desc:"Three attackers break against two defenders retreating.",cue:"Wide and fast. Draw the defender, then release."},
+ {id:"ssg",cat:"Tactics",name:"Small-sided game",reps:2,work:420,rest:90,change:60,desc:"3 v 3 on half pitch. Coach watches decision-making.",cue:"Game on. Talk to each other, play quick."},
+ {id:"match",cat:"Tactics",name:"Match halves",reps:2,work:600,rest:180,change:60,desc:"Full 5 v 5 scrimmage, two ten-minute halves as in competition.",cue:"Full match. Ten minute half. Play to the referee."},
+ {id:"cool",cat:"Cool-down",name:"Cool-down paddle",reps:1,work:300,rest:0,change:20,desc:"Easy laps, let the heart rate fall, then stretch on the bank.",cue:"Easy paddle. Bring the breathing down."}
+];
+const byId=Object.fromEntries(DRILLS.map(d=>[d.id,d]));
+const PRESETS={
+ "Club night":["easy","mob","hand","s25","pp","tri","s6","fb","ssg","cool"],
+ "Lactic Tuesday":["easy","mob","turn","pyr","tab","pp","cool"],
+ "Match sharpener":["easy","hand","drop","pres","zone","match","cool"]
+};
+
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let session=store.get("pp.session")||{name:"Club night",blocks:PRESETS["Club night"].map(mk)};
+function mk(id){const d=byId[id];return{id,reps:d.reps,work:d.work,rest:d.rest,change:d.change}}
+function save(){store.set("pp.session",session)}
+
+const $=s=>document.querySelector(s);
+const fmt=s=>{s=Math.max(0,Math.ceil(s));const m=Math.floor(s/60),x=s%60;return m+":"+String(x).padStart(2,"0")};
+const fmtLong=s=>{const m=Math.round(s/60);return m>=60?Math.floor(m/60)+"h "+(m%60)+"m":m+" min"};
+const blockTime=b=>b.change+b.reps*b.work+Math.max(0,b.reps-1)*b.rest;
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),1600)}
+
+/* ---- tabs ---- */
+function show(tab){
+  $("#v-session").hidden=tab!=="session";$("#v-drills").hidden=tab!=="drills";
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
+  window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-tab]");if(t)show(t.dataset.tab)});
+
+/* ---- session view ---- */
+const sel=$("#preset");
+sel.innerHTML='<option value="">Load preset…</option>'+Object.keys(PRESETS).map(n=>`<option>${n}</option>`).join("");
+sel.onchange=()=>{if(!sel.value)return;session={name:sel.value,blocks:PRESETS[sel.value].map(mk)};save();renderSession();toast("Loaded "+sel.value);sel.value=""};
+$("#clearBtn").onclick=()=>{session={name:"Custom session",blocks:[]};save();renderSession()};
+
+function renderSession(){
+  $("#sname").textContent=session.name;
+  const B=session.blocks,total=B.reduce((a,b)=>a+blockTime(b),0);
+  const hard=B.filter(b=>["Sprints","Lactic"].includes(byId[b.id].cat)).reduce((a,b)=>a+b.reps*b.work,0);
+  const efforts=B.reduce((a,b)=>a+b.reps,0);
+  $("#summary").innerHTML=`<div><b>${fmtLong(total)}</b><span>Total session</span></div><div><b>${B.length}</b><span>Drills</span></div><div><b>${efforts}</b><span>Work intervals</span></div><div><b>${fmt(hard)}</b><span>Sprint + lactic work</span></div>`;
+  $("#tl").innerHTML=total?B.map(b=>`<i title="${byId[b.id].name}" style="flex:${blockTime(b)};background:${CAT_COL[byId[b.id].cat]}"></i>`).join(""):"";
+  $("#startBtn").disabled=!B.length;
+  $("#blocks").innerHTML=B.length?B.map((b,i)=>{const d=byId[b.id];return`<li>
+    <div class="num">${String(i+1).padStart(2,"0")}</div>
+    <div class="min0"><div class="row"><span class="bname">${d.name}</span><span class="cat" data-c="${d.cat}">${d.cat}</span></div>
+      <div class="bmeta">${b.reps} × ${fmt(b.work)}${b.reps>1&&b.rest?` / ${fmt(b.rest)} rest`:""} · ${fmt(blockTime(b))} incl. set-up</div>
+      <div class="fields">
+        <label for="r${i}">Reps<input id="r${i}" type="number" min="1" max="50" value="${b.reps}" data-i="${i}" data-k="reps"></label>
+        <label for="w${i}">Work (s)<input id="w${i}" type="number" min="5" step="5" value="${b.work}" data-i="${i}" data-k="work"></label>
+        <label for="s${i}">Rest (s)<input id="s${i}" type="number" min="0" step="5" value="${b.rest}" data-i="${i}" data-k="rest"></label>
+        <label for="c${i}">Set-up (s)<input id="c${i}" type="number" min="0" step="5" value="${b.change}" data-i="${i}" data-k="change"></label>
+      </div></div>
+    <div class="bctl"><button class="icon" data-mv="-1" data-i="${i}" aria-label="Move up">↑</button><button class="icon" data-mv="1" data-i="${i}" aria-label="Move down">↓</button><button class="icon" data-rm="${i}" aria-label="Remove">✕</button></div>
+  </li>`}).join(""):`<li style="grid-template-columns:1fr"><div><b>No drills yet.</b> <span class="bmeta">Load a preset above or add drills from the library.</span></div></li>`;
+}
+$("#blocks").addEventListener("change",e=>{const t=e.target;if(!t.dataset.k)return;const v=Math.max(+t.min||0,parseInt(t.value)||0);session.blocks[t.dataset.i][t.dataset.k]=v;session.name=session.name.replace(/ \(edited\)$/,"")+" (edited)";save();renderSession()});
+$("#blocks").addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;const B=session.blocks;
+  if(t.dataset.rm!==undefined){B.splice(+t.dataset.rm,1)}
+  else if(t.dataset.mv){const i=+t.dataset.i,j=i+ +t.dataset.mv;if(j<0||j>=B.length)return;[B[i],B[j]]=[B[j],B[i]]}
+  save();renderSession()});
+
+/* ---- drill library ---- */
+let filt="All";
+function renderDrills(){
+  $("#filters").innerHTML=["All",...CATS].map(c=>`<button aria-pressed="${c===filt}" data-f="${c}">${c}</button>`).join("");
+  $("#grid").innerHTML=DRILLS.filter(d=>filt==="All"||d.cat===filt).map(d=>`<article class="drill">
+    <div class="row spread"><h3>${d.name}</h3><span class="cat" data-c="${d.cat}">${d.cat}</span></div>
+    <p>${d.desc}</p>
+    <div class="spec">${d.reps} × ${fmt(d.work)}${d.rest?` · ${fmt(d.rest)} rest`:""}</div>
+    <div class="cue">“${d.cue}”</div>
+    <footer><span class="bmeta">${fmt(blockTime(d))} total</span><button class="btn" data-add="${d.id}">+ Add</button></footer>
+  </article>`).join("");
+}
+$("#filters").addEventListener("click",e=>{const f=e.target.dataset.f;if(f){filt=f;renderDrills()}});
+$("#grid").addEventListener("click",e=>{const id=e.target.dataset.add;if(!id)return;session.blocks.push(mk(id));save();renderSession();toast(byId[id].name+" added")});
+
+/* ---- audio ---- */
+let ac;
+function tone(freq,dur,type="square",vol=.25,when=0){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime+when,o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur)}catch(e){}
+}
+const beep=()=>tone(880,.15);
+function whistle(){ // pea-whistle trill: two close tones warbling
+  for(let i=0;i<10;i++){tone(2600+(i%2)*180,.07,"sine",.3,i*.06)}
+}
+function say(t){if(!$("#voiceT").checked||!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=1.02;speechSynthesis.speak(u)}catch(e){}}
+
+/* ---- runner ---- */
+let plan=[],idx=0,left=0,running=false,last=0,warned=false,elapsed=0,wake=null,timer=null;
+function build(){
+  const p=[{ph:"ready",dur:10,name:"Get ready",say:`${session.name}. ${session.blocks.length} drills. Starting in ten seconds.`}];
+  session.blocks.forEach((b,bi)=>{const d=byId[b.id];
+    if(bi>0&&b.change)p.push({ph:"change",dur:b.change,name:d.name,cue:d.desc,say:`Set up. Next drill, ${d.name}.`});
+    for(let r=1;r<=b.reps;r++){
+      p.push({ph:"work",dur:b.work,name:d.name,rep:r,reps:b.reps,cue:d.cue,say:r===1?`${d.name}. ${d.cue}`:(r===b.reps?"Last one. Go!":`Rep ${r}. Go!`)});
+      if(r<b.reps&&b.rest)p.push({ph:"rest",dur:b.rest,name:d.name,rep:r,reps:b.reps,cue:"Recover. Paddle easy, breathe.",say:`Rest. ${b.rest} seconds.`});
+    }});
+  p.push({ph:"done",dur:0,name:"Session complete",say:"Session complete. Well done everyone."});
+  return p;
+}
+const PH={ready:["Ready","var(--rest)"],change:["Set up","var(--change)"],work:["Work","var(--work)"],rest:["Rest","var(--rest)"],done:["Done","var(--work)"]};
+function enter(i,announce=true){
+  idx=Math.max(0,Math.min(plan.length-1,i));const it=plan[idx];left=it.dur;warned=false;
+  if(announce){whistle();setTimeout(()=>say(it.say),450)}
+  if(it.ph==="done"){running=false;releaseWake()}
+  paint();
+}
+function nextLabel(){for(let j=idx+1;j<plan.length;j++){const n=plan[j];if(n.ph==="work"||n.ph==="done")return n.ph==="done"?"Finish":`${n.name}${n.reps>1?` · rep ${n.rep}/${n.reps}`:""}`}return""}
+function paint(){
+  const it=plan[idx],[lab,col]=PH[it.ph];
+  $("#run").style.setProperty("--pc",col);
+  $("#phase").textContent=running||it.ph==="done"?lab:"Paused";
+  $("#clock").textContent=fmt(left);
+  $("#dname").textContent=it.name;
+  $("#rep").textContent=it.reps>1?`REP ${it.rep} / ${it.reps}`:"";
+  $("#cueline").textContent=it.cue||"";
+  $("#prog").style.width=it.dur?((1-left/it.dur)*100)+"%":"100%";
+  const nx=nextLabel();$("#next").innerHTML=nx?`Next up<b>${nx}</b>`:"";
+  $("#elapsed").textContent=`${fmt(elapsed)} elapsed · ${idx+1}/${plan.length}`;
+  $("#playBtn").textContent=running?"❚❚":"▶";$("#playBtn").setAttribute("aria-label",running?"Pause":"Resume");
+}
+function tick(){
+  if(!running)return;const now=performance.now(),dt=(now-last)/1000;last=now;
+  const before=Math.ceil(left);left-=dt;elapsed+=dt;const after=Math.ceil(left);
+  const it=plan[idx];
+  if(after!==before&&after<=3&&after>=1)beep();
+  if(!warned&&left<=10&&it.dur>20&&(it.ph==="rest"||it.ph==="change")){warned=true;const nx=nextLabel();if(nx)say("Ten seconds. Next, "+nx.replace("·",""))}
+  else if(!warned&&left<=30&&it.dur>=180&&it.ph==="work"){warned=true;say("Thirty seconds left")}
+  if(left<=0){enter(idx+1)}else paint();
+}
+function play(){ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();running=true;last=performance.now();grabWake();paint()}
+function pause(){running=false;try{speechSynthesis.cancel()}catch(e){}paint()}
+async function grabWake(){try{wake=await navigator.wakeLock.request("screen")}catch(e){}}
+function releaseWake(){try{wake&&wake.release()}catch(e){}wake=null}
+
+$("#startBtn").onclick=()=>{plan=build();elapsed=0;$("#run").hidden=false;document.body.style.overflow="hidden";
+  try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}
+  play();enter(0);clearInterval(timer);timer=setInterval(tick,100)};
+$("#exitBtn").onclick=()=>{pause();clearInterval(timer);releaseWake();$("#run").hidden=true;document.body.style.overflow="";try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}};
+$("#playBtn").onclick=e=>{e.stopPropagation();if(plan[idx].ph==="done")return;running?pause():play()};
+$("#stage").onclick=()=>$("#playBtn").click();
+$("#skipBtn").onclick=()=>enter(idx+1);
+$("#prevBtn").onclick=()=>enter(left<plan[idx].dur-2?idx:idx-1,false);
+$("#addBtn").onclick=()=>{left+=30;plan[idx].dur+=30;paint();toast("+30 seconds")};
+document.addEventListener("keydown",e=>{if($("#run").hidden)return;if(e.code==="Space"){e.preventDefault();$("#playBtn").click()}if(e.key==="ArrowRight")enter(idx+1);if(e.key==="Escape")$("#exitBtn").click()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&running)grabWake()});
+
+renderSession();renderDrills();
+</script>
+</body>
+</html>
